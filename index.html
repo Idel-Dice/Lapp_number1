@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucy's Math Adventure 🌸</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink-light: #FFB3C6;
+    --pink-mid:   #FF6B9D;
+    --pink-deep:  #E91E8C;
+    --red-bright: #FF3366;
+    --red-deep:   #C0003C;
+    --gold:       #FFD700;
+    --gold-light: #FFF3B0;
+    --white:      #FFFFFF;
+    --cream:      #FFF0F5;
+    --purple-acc: #C84B9E;
+    --text-dark:  #3A003A;
+    --shadow:     rgba(200, 0, 100, 0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--cream);
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: var(--text-dark);
+  }
+
+  /* ─── ANIMATED BACKGROUND ─── */
+  .bg-bubbles {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .bubble {
+    position: absolute; border-radius: 50%; opacity: 0.13;
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(110vh) scale(1); opacity: 0.13; }
+    100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+  }
+
+  /* ─── STARS ─── */
+  .star {
+    position: fixed; pointer-events: none; z-index: 0;
+    font-size: 1.1rem; animation: twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%,100% { opacity: 0.2; transform: scale(1); }
+    50%      { opacity: 0.7; transform: scale(1.3); }
+  }
+
+  /* ─── LAYOUT ─── */
+  #app {
+    position: relative; z-index: 1;
+    max-width: 700px; margin: 0 auto;
+    padding: 16px 12px 40px;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  /* ─── HEADER ─── */
+  .game-header {
+    width: 100%; text-align: center; margin-bottom: 18px;
+  }
+  .game-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: clamp(1.8rem, 6vw, 2.8rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--red-bright) 0%, var(--pink-deep) 50%, var(--purple-acc) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    filter: drop-shadow(0 2px 6px rgba(233,30,140,0.25));
+    line-height: 1.1;
+  }
+  .game-subtitle {
+    font-size: 0.95rem; color: var(--pink-mid); font-weight: 700; letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  /* ─── HUD ─── */
+  .hud {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    width: 100%; margin-bottom: 16px;
+  }
+  .hud-pill {
+    background: white; border-radius: 50px;
+    padding: 6px 18px; font-weight: 800; font-size: 0.9rem;
+    box-shadow: 0 3px 12px var(--shadow);
+    border: 2.5px solid var(--pink-light);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .hud-pill span { color: var(--pink-deep); }
+  .hearts { color: var(--red-bright); font-size: 1.1rem; letter-spacing: 2px; }
+
+  /* ─── SCREENS ─── */
+  .screen {
+    width: 100%; display: none; flex-direction: column; align-items: center;
+    animation: fadeIn 0.4s ease;
+  }
+  .screen.active { display: flex; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: white; border-radius: 28px;
+    padding: 28px 24px; width: 100%;
+    box-shadow: 0 8px 32px var(--shadow), 0 2px 0 var(--pink-light);
+    border: 3px solid var(--pink-light);
+    margin-bottom: 14px;
+  }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    border: none; border-radius: 50px; cursor: pointer;
+    transition: transform 0.13s, box-shadow 0.13s;
+    text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:active { transform: scale(0.94); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--red-bright), var(--pink-deep));
+    color: white; padding: 14px 36px; font-size: 1.1rem;
+    box-shadow: 0 5px 18px rgba(233,30,140,0.35);
+  }
+  .btn-primary:hover { box-shadow: 0 8px 24px rgba(233,30,140,0.45); transform: translateY(-2px); }
+  .btn-secondary {
+    background: white; color: var(--pink-deep);
+    border: 2.5px solid var(--pink-light); padding: 10px 26px; font-size: 1rem;
+    box-shadow: 0 3px 10px var(--shadow);
+  }
+  .btn-secondary:hover { background: var(--cream); }
+  .btn-level {
+    background: linear-gradient(135deg, var(--pink-light), var(--pink-mid));
+    color: white; padding: 18px 28px; font-size: 1.05rem; border-radius: 20px;
+    box-shadow: 0 4px 14px rgba(255,107,157,0.35); width: 100%; margin-bottom: 10px;
+    flex-direction: column; gap: 3px;
+  }
+  .btn-level:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(255,107,157,0.45); }
+  .btn-level.locked {
+    background: #e0e0e0; color: #aaa; cursor: not-allowed; box-shadow: none;
+  }
+  .btn-level.locked:hover { transform: none; }
+  .btn-level-sub { font-size: 0.78rem; font-weight: 600; opacity: 0.85; font-family: 'Nunito', sans-serif; }
+
+  /* ─── HOME SCREEN ─── */
+  .lucy-avatar {
+    font-size: 5rem; margin-bottom: 10px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-12px); }
+  }
+  .welcome-text {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: clamp(1.4rem, 4.5vw, 2rem); color: var(--text-dark);
+    text-align: center; margin-bottom: 6px;
+  }
+  .welcome-sub {
+    text-align: center; color: #888; font-size: 0.92rem; margin-bottom: 22px;
+  }
+
+  /* ─── LEVEL SELECT ─── */
+  .level-grid { width: 100%; display: flex; flex-direction: column; }
+  .level-section-title {
+    font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 1rem;
+    color: var(--purple-acc); text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 10px 0 8px; padding-left: 4px;
+  }
+
+  /* ─── QUESTION CARD ─── */
+  .question-label {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: 0.85rem; color: var(--pink-mid); text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 10px;
+  }
+  .question-text {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: clamp(1.6rem, 6vw, 2.5rem); color: var(--text-dark);
+    text-align: center; line-height: 1.2; margin-bottom: 20px;
+  }
+  .question-emoji { font-size: 2.5rem; display: block; text-align: center; margin-bottom: 8px; }
+
+  /* ─── PATTERN ROW ─── */
+  .pattern-row {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;
+    margin-bottom: 18px;
+  }
+  .pattern-item {
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    background: var(--cream); border-radius: 14px;
+    width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--pink-light);
+  }
+  .pattern-blank {
+    background: var(--gold-light); border: 2.5px dashed var(--gold);
+    font-size: 1.4rem; color: var(--gold); font-weight: 900;
+  }
+
+  /* ─── ANSWER CHOICES ─── */
+  .choices-grid {
+    display: grid; gap: 10px; width: 100%;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .choices-grid.four { grid-template-columns: repeat(2, 1fr); }
+  .choice-btn {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: clamp(1.1rem, 4vw, 1.5rem);
+    padding: 16px 10px; border-radius: 18px; cursor: pointer;
+    border: 3px solid var(--pink-light); background: white;
+    color: var(--text-dark); transition: all 0.15s;
+    box-shadow: 0 3px 10px var(--shadow);
+    text-align: center;
+  }
+  .choice-btn:hover:not(:disabled) {
+    background: var(--cream); border-color: var(--pink-mid); transform: translateY(-2px);
+  }
+  .choice-btn.correct {
+    background: linear-gradient(135deg, #4CAF50, #8BC34A);
+    border-color: #4CAF50; color: white;
+    animation: correctPop 0.4s ease;
+  }
+  .choice-btn.wrong {
+    background: linear-gradient(135deg, #F44336, #E91E63);
+    border-color: #F44336; color: white;
+    animation: shake 0.4s ease;
+  }
+  @keyframes correctPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%     { transform: translateX(-7px); }
+    40%     { transform: translateX(7px); }
+    60%     { transform: translateX(-5px); }
+    80%     { transform: translateX(5px); }
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-bar-wrap {
+    width: 100%; background: var(--pink-light); border-radius: 50px;
+    height: 13px; margin-bottom: 12px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 50px;
+    background: linear-gradient(90deg, var(--red-bright), var(--pink-deep));
+    transition: width 0.5s ease;
+  }
+  .progress-label {
+    text-align: right; font-size: 0.8rem; color: var(--pink-mid); font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  /* ─── FEEDBACK ─── */
+  .feedback-popup {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    z-index: 999; text-align: center;
+    background: white; border-radius: 28px; padding: 30px 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    border: 4px solid var(--pink-light);
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+  }
+  .feedback-popup.show { transform: translate(-50%, -50%) scale(1); pointer-events: all; }
+  .feedback-emoji { font-size: 4rem; display: block; margin-bottom: 8px; }
+  .feedback-msg { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 1.5rem; }
+  .feedback-msg.good { color: #4CAF50; }
+  .feedback-msg.bad  { color: var(--red-bright); }
+
+  /* ─── RESULTS SCREEN ─── */
+  .results-trophy { font-size: 5rem; animation: bounce 1.5s ease-in-out infinite; }
+  .results-score {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: 2.5rem; color: var(--pink-deep); margin: 10px 0;
+  }
+  .stars-row { font-size: 2.5rem; margin: 8px 0; letter-spacing: 6px; }
+  .confetti-piece {
+    position: fixed; pointer-events: none; z-index: 999;
+    width: 10px; height: 10px; border-radius: 2px;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ─── RIBBON / BADGES ─── */
+  .badge {
+    display: inline-block; background: linear-gradient(135deg, var(--gold), #FFA500);
+    color: white; font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: 0.8rem; padding: 4px 14px; border-radius: 50px;
+    box-shadow: 0 2px 8px rgba(255,165,0,0.4);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin: 4px;
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider { width: 60%; height: 3px; background: linear-gradient(90deg, transparent, var(--pink-light), transparent); border-radius: 50px; margin: 16px auto; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 480px) {
+    .card { padding: 20px 14px; }
+    .choices-grid { grid-template-columns: repeat(2,1fr); gap: 8px; }
+    .choice-btn { padding: 14px 8px; font-size: 1.1rem; }
+    .pattern-item { width: 46px; height: 46px; font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Animated bubbles background -->
+<div class="bg-bubbles" id="bubbles"></div>
+
+<div id="app">
+  <header class="game-header">
+    <div class="game-title">🌸 Lucy's Math Adventure</div>
+    <div class="game-subtitle">Learn • Play • Grow!</div>
+  </header>
+
+  <!-- HUD -->
+  <div class="hud" id="hud" style="display:none;">
+    <div class="hud-pill">⭐ Stars: <span id="hud-score">0</span></div>
+    <div class="hud-pill">❤️ <span class="hearts" id="hud-hearts">♥♥♥</span></div>
+    <div class="hud-pill">🎯 Level <span id="hud-level">1</span></div>
+  </div>
+
+  <!-- ══════════ HOME SCREEN ══════════ -->
+  <div class="screen active" id="screen-home">
+    <div class="lucy-avatar">🦄</div>
+    <div class="welcome-text">Hi, Lucy! 👋</div>
+    <div class="welcome-sub">Ready for a math adventure? Let's go!</div>
+    <div class="card" style="text-align:center;">
+      <p style="font-size:0.95rem;color:#888;margin-bottom:18px;">Choose your adventure below — earn stars ⭐ and unlock new levels!</p>
+      <button class="btn btn-primary" onclick="showScreen('screen-levels')" style="font-size:1.2rem;padding:16px 44px;">
+        🚀 Play!
+      </button>
+      <div class="divider"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:4px;">
+        <span class="badge">🧮 1st Grade Math</span>
+        <span class="badge">🔢 2nd Grade Math</span>
+        <span class="badge">🔷 Patterns</span>
+      </div>
+    </div>
+    <div style="font-size:0.8rem;color:#ccc;margin-top:10px;">Made with 💖 just for Lucy</div>
+  </div>
+
+  <!-- ══════════ LEVEL SELECT SCREEN ══════════ -->
+  <div class="screen" id="screen-levels">
+    <div class="card">
+      <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:1.3rem;color:var(--text-dark);margin-bottom:4px;">Choose a Level 🎮</div>
+      <p style="color:#aaa;font-size:0.88rem;margin-bottom:16px;">Complete levels to unlock the next one!</p>
+
+      <div class="level-grid" id="level-list"></div>
+
+      <div style="margin-top:14px;text-align:center;">
+        <button class="btn btn-secondary" onclick="showScreen('screen-home')">← Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ GAME SCREEN ══════════ -->
+  <div class="screen" id="screen-game">
+    <div style="width:100%;margin-bottom:4px;">
+      <div class="progress-label" id="progress-label">Question 1 of 8</div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="card" id="question-card">
+      <div class="question-label" id="q-label">Math Challenge</div>
+      <span class="question-emoji" id="q-emoji">🌸</span>
+      <div class="question-text" id="q-text">Loading...</div>
+      <div class="pattern-row" id="pattern-row" style="display:none;"></div>
+      <div class="choices-grid four" id="choices-grid"></div>
+    </div>
+
+    <button class="btn btn-secondary" onclick="quitGame()" style="margin-top:4px;">🏠 Quit</button>
+  </div>
+
+  <!-- ══════════ RESULTS SCREEN ══════════ -->
+  <div class="screen" id="screen-results">
+    <div class="card" style="text-align:center;">
+      <div class="results-trophy" id="results-trophy">🏆</div>
+      <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:1.6rem;color:var(--text-dark);" id="results-title">Amazing!</div>
+      <div class="stars-row" id="results-stars">⭐⭐⭐</div>
+      <div class="results-score" id="results-score">8 / 8</div>
+      <div style="color:#888;font-size:0.9rem;margin-bottom:20px;" id="results-msg">You got every single one!</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="playAgainSameLevel()">🔄 Play Again</button>
+        <button class="btn btn-secondary" onclick="showScreen('screen-levels')">📋 Levels</button>
+        <button class="btn btn-secondary" onclick="showScreen('screen-home')">🏠 Home</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback popup -->
+<div class="feedback-popup" id="feedback-popup">
+  <span class="feedback-emoji" id="feedback-emoji">🎉</span>
+  <div class="feedback-msg" id="feedback-msg">Correct!</div>
+</div>
+
+<script>
+// ══════════════════════════════════
+//  GAME DATA & STATE
+// ══════════════════════════════════
+
+const LEVELS = [
+  {
+    id: 1, name: "Counting Fun", emoji: "🍎",
+    grade: "1st Grade", desc: "Count & add to 10",
+    type: "math", difficulty: 1, questionsPerRound: 8,
+    unlocked: true,
+  },
+  {
+    id: 2, name: "Add & Subtract", emoji: "🌷",
+    grade: "1st Grade", desc: "Add & subtract to 20",
+    type: "math", difficulty: 2, questionsPerRound: 8,
+    unlocked: false,
+  },
+  {
+    id: 3, name: "Shape Patterns", emoji: "🔷",
+    grade: "1st Grade", desc: "What comes next?",
+    type: "pattern", difficulty: 1, questionsPerRound: 8,
+    unlocked: false,
+  },
+  {
+    id: 4, name: "Number Patterns", emoji: "🔢",
+    grade: "2nd Grade", desc: "Skip counting sequences",
+    type: "pattern", difficulty: 2, questionsPerRound: 8,
+    unlocked: false,
+  },
+  {
+    id: 5, name: "Bigger Math", emoji: "🦋",
+    grade: "2nd Grade", desc: "Add & subtract to 100",
+    type: "math", difficulty: 3, questionsPerRound: 8,
+    unlocked: false,
+  },
+  {
+    id: 6, name: "Times Tables", emoji: "⭐",
+    grade: "2nd Grade", desc: "Multiply by 2s & 5s",
+    type: "math", difficulty: 4, questionsPerRound: 8,
+    unlocked: false,
+  },
+  {
+    id: 7, name: "Word Problems", emoji: "📖",
+    grade: "2nd Grade", desc: "Story math problems",
+    type: "word", difficulty: 4, questionsPerRound: 6,
+    unlocked: false,
+  },
+  {
+    id: 8, name: "Super Challenge", emoji: "🏆",
+    grade: "Boss Level!", desc: "Mix of everything!",
+    type: "mixed", difficulty: 5, questionsPerRound: 10,
+    unlocked: false,
+  },
+];
+
+const SHAPE_PATTERNS = [
+  ["🔴","🔵","🔴","🔵","🔴","❓"],
+  ["⭐","❤️","⭐","❤️","⭐","❓"],
+  ["🌸","🌺","🌸","🌺","🌸","❓"],
+  ["🟥","🟦","🟩","🟥","🟦","❓"],
+  ["🐱","🐶","🐱","🐶","🐱","❓"],
+  ["🌙","⭐","🌙","⭐","🌙","❓"],
+  ["🍎","🍊","🍋","🍎","🍊","❓"],
+  ["🔺","🔶","🔷","🔺","🔶","❓"],
+  ["💜","💛","💜","💛","💜","❓"],
+  ["🐝","🦋","🐝","🦋","🐝","❓"],
+];
+
+const WORD_PROBLEMS = [
+  { q:"Lucy has 7 🍎 apples. She gives 3 to her friend. How many does she have?", a:4, choices:[3,4,5,10] },
+  { q:"There are 5 red flowers 🌺 and 6 pink flowers 🌸. How many flowers in all?", a:11, choices:[9,10,11,12] },
+  { q:"Lucy has 14 stickers ⭐. She gives 6 away. How many does she keep?", a:8, choices:[6,7,8,9] },
+  { q:"There are 3 boxes 📦 with 4 crayons each. How many crayons are there?", a:12, choices:[7,10,12,14] },
+  { q:"Lucy reads 8 pages on Monday and 7 on Tuesday. How many total?", a:15, choices:[13,14,15,16] },
+  { q:"A bag has 20 🍬 candies. Lucy eats 9. How many are left?", a:11, choices:[9,10,11,12] },
+];
+
+let state = {
+  currentLevel: null,
+  questions: [],
+  currentQ: 0,
+  score: 0,
+  hearts: 3,
+  totalStars: parseInt(localStorage.getItem('lucyStars') || '0'),
+  unlockedLevels: JSON.parse(localStorage.getItem('lucyUnlocked') || '[1]'),
+};
+
+// ══════════════════════════════════
+//  QUESTION GENERATORS
+// ══════════════════════════════════
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function uniqueChoices(answer, min, max, count=4) {
+  const set = new Set([answer]);
+  let tries = 0;
+  while (set.size < count && tries < 100) {
+    let v = rand(min, max);
+    if (v !== answer) set.add(v);
+    tries++;
+  }
+  return shuffle([...set]);
+}
+
+function generateMath(difficulty) {
+  const emojis = ['🌸','🍎','⭐','🦋','🌈','🎀','🍭','🌺'];
+  const emoji = emojis[rand(0, emojis.length-1)];
+
+  if (difficulty === 1) {
+    // add/subtract within 10
+    const a = rand(1,9), b = rand(1,9-a);
+    const ops = ['+','-'];
+    const op = ops[rand(0,1)];
+    const aa = op==='-' ? a+b : a;
+    const bb = op==='-' ? b : b;
+    const ans = op==='+' ? aa+bb : aa-bb;
+    return { label:'Add & Count', emoji, text:`${aa} ${op} ${bb} = ?`, answer:ans, choices:uniqueChoices(ans,0,10), type:'math' };
+  }
+  if (difficulty === 2) {
+    const a = rand(2,18), b = rand(1,Math.min(a,18));
+    const op = rand(0,1)?'+':'-';
+    const ans = op==='+' ? a+b : a-b;
+    const max = op==='+' ? Math.min(a+b+8,25) : a;
+    return { label:'Add & Subtract', emoji, text:`${op==='+'?a:a+b} ${op} ${op==='+'?b:b} = ?`, answer:ans, choices:uniqueChoices(ans, Math.max(0,ans-5), ans+5), type:'math' };
+  }
+  if (difficulty === 3) {
+    // tens & ones
+    const a = rand(10,90), b = rand(1,99-a);
+    const op = rand(0,1)?'+':'-';
+    const first = op==='-' ? a+b : a;
+    const second = op==='-' ? b : b;
+    const ans = op==='+' ? first+second : first-second;
+    return { label:'Big Numbers', emoji, text:`${first} ${op} ${second} = ?`, answer:ans, choices:uniqueChoices(ans, Math.max(0,ans-10), ans+10), type:'math' };
+  }
+  if (difficulty === 4) {
+    // times tables 2,5,10
+    const tables = [2,5,10];
+    const t = tables[rand(0,2)];
+    const n = rand(1,10);
+    const ans = t*n;
+    return { label:`Times Tables`, emoji, text:`${t} × ${n} = ?`, answer:ans, choices:uniqueChoices(ans, Math.max(0,ans-10), ans+10), type:'math' };
+  }
+  // difficulty 5 mixed
+  const sub = rand(1,4);
+  return generateMath(sub);
+}
+
+function generatePattern(difficulty) {
+  if (difficulty === 1) {
+    // emoji shape pattern
+    const idx = rand(0, SHAPE_PATTERNS.length-1);
+    const pat = SHAPE_PATTERNS[idx];
+    const answer = pat[1]; // the alternating answer
+    // Determine answer: it's the element at index 5 (after the ❓)
+    // Pattern: A B A B A → answer = A (index 0)
+    // Some patterns are 3-cycles
+    let ans;
+    if (pat.length === 6) {
+      // cycle: look at position 5 in the original (pre-❓) sequence
+      const full = [pat[0],pat[1],pat[2],pat[3],pat[4]];
+      ans = full[5 % (full.length < 3 ? 2 : 2)]; // AB repeating
+      // Simple: answer matches pat[4] or pat[3]?
+      ans = full[0]; // always index 0 for AB AB A?
+    }
+    // Re-derive: for AB AB A❓, answer is B
+    const preview = pat.slice(0,5);
+    ans = pat[1]; // B
+
+    const distractors = SHAPE_PATTERNS
+      .filter((_,i)=>i!==idx)
+      .map(p=>p[0])
+      .filter(e=>e!==ans);
+    const choices = shuffle([ans, ...distractors.slice(0,3)]);
+    return {
+      label:'Shape Patterns', emoji:'🔷',
+      text:'What comes next?',
+      pattern: preview,
+      answer: ans,
+      choices: choices,
+      type:'pattern'
+    };
+  } else {
+    // number skip-counting pattern
+    const skips = [2,3,5,10];
+    const skip = skips[rand(0, difficulty===2 ? 2 : 3)];
+    const start = rand(0,20);
+    const seq = [start, start+skip, start+2*skip, start+3*skip, start+4*skip];
+    const ans = start+5*skip;
+    return {
+      label:'Number Patterns', emoji:'🔢',
+      text:'What number comes next?',
+      pattern: seq.map(String),
+      answer: ans,
+      choices: uniqueChoices(ans, Math.max(0,ans-skip*2), ans+skip*2),
+      type:'pattern-num'
+    };
+  }
+}
+
+function generateWord() {
+  const p = WORD_PROBLEMS[rand(0,WORD_PROBLEMS.length-1)];
+  return { label:'Word Problem', emoji:'📖', text:p.q, answer:p.a, choices:shuffle(p.choices), type:'word' };
+}
+
+function buildQuestions(level) {
+  const qs = [];
+  const n = level.questionsPerRound;
+  for (let i=0; i<n; i++) {
+    if (level.type === 'math')    qs.push(generateMath(level.difficulty));
+    else if (level.type === 'pattern') qs.push(generatePattern(level.difficulty));
+    else if (level.type === 'word')    qs.push(generateWord());
+    else {
+      // mixed
+      const t = rand(0,2);
+      if (t===0) qs.push(generateMath(rand(1,4)));
+      else if (t===1) qs.push(generatePattern(rand(1,2)));
+      else qs.push(generateWord());
+    }
+  }
+  return qs;
+}
+
+// ══════════════════════════════════
+//  SCREEN MANAGEMENT
+// ══════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const showHud = id === 'screen-game';
+  document.getElementById('hud').style.display = showHud ? 'flex' : 'none';
+  if (id === 'screen-levels') buildLevelList();
+}
+
+// ══════════════════════════════════
+//  LEVEL LIST
+// ══════════════════════════════════
+function buildLevelList() {
+  const el = document.getElementById('level-list');
+  el.innerHTML = '';
+  LEVELS.forEach(lv => {
+    const unlocked = state.unlockedLevels.includes(lv.id);
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-level' + (unlocked ? '' : ' locked');
+    btn.innerHTML = `
+      <span style="font-size:1.3rem;">${lv.emoji} ${lv.name}</span>
+      <span class="btn-level-sub">${lv.grade} — ${lv.desc}${unlocked ? '' : ' 🔒'}</span>
+    `;
+    if (unlocked) btn.onclick = () => startLevel(lv);
+    el.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════
+//  START LEVEL
+// ══════════════════════════════════
+function startLevel(level) {
+  state.currentLevel = level;
+  state.questions = buildQuestions(level);
+  state.currentQ = 0;
+  state.score = 0;
+  state.hearts = 3;
+  document.getElementById('hud-level').textContent = level.id;
+  showScreen('screen-game');
+  renderQuestion();
+}
+
+function playAgainSameLevel() {
+  if (state.currentLevel) startLevel(state.currentLevel);
+}
+
+function quitGame() { showScreen('screen-levels'); }
+
+// ══════════════════════════════════
+//  RENDER QUESTION
+// ══════════════════════════════════
+function renderQuestion() {
+  const q = state.questions[state.currentQ];
+  const total = state.questions.length;
+
+  // Progress
+  document.getElementById('progress-label').textContent = `Question ${state.currentQ+1} of ${total}`;
+  document.getElementById('progress-bar').style.width = `${(state.currentQ/total)*100}%`;
+
+  // HUD
+  updateHud();
+
+  // Label & emoji
+  document.getElementById('q-label').textContent = q.label;
+  document.getElementById('q-emoji').textContent = q.emoji;
+  document.getElementById('q-text').textContent = q.text;
+
+  // Pattern row
+  const patRow = document.getElementById('pattern-row');
+  if (q.pattern) {
+    patRow.style.display = 'flex';
+    patRow.innerHTML = q.pattern.map((p,i) => {
+      const isNum = q.type === 'pattern-num';
+      return `<div class="pattern-item${isNum?' ':' '}">${p}</div>`;
+    }).join('') + `<div class="pattern-item pattern-blank">?</div>`;
+  } else {
+    patRow.style.display = 'none';
+    patRow.innerHTML = '';
+  }
+
+  // Choices
+  const grid = document.getElementById('choices-grid');
+  grid.innerHTML = '';
+  q.choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = c;
+    btn.onclick = () => handleAnswer(c, btn);
+    grid.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════
+//  ANSWER HANDLING
+// ══════════════════════════════════
+let answerLocked = false;
+
+function handleAnswer(chosen, btn) {
+  if (answerLocked) return;
+  answerLocked = true;
+
+  const q = state.questions[state.currentQ];
+  const correct = chosen == q.answer;
+
+  // Disable all buttons
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
+  if (correct) {
+    btn.classList.add('correct');
+    state.score++;
+    state.totalStars++;
+    showFeedback(true);
+  } else {
+    btn.classList.add('wrong');
+    state.hearts = Math.max(0, state.hearts - 1);
+    // Show correct answer
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (b.textContent == q.answer) b.classList.add('correct');
+    });
+    showFeedback(false);
+  }
+
+  updateHud();
+  savePersist();
+
+  setTimeout(() => {
+    hideFeedback();
+    answerLocked = false;
+    state.currentQ++;
+    if (state.currentQ >= state.questions.length || state.hearts === 0) {
+      showResults();
+    } else {
+      renderQuestion();
+    }
+  }, 1300);
+}
+
+// ══════════════════════════════════
+//  HUD
+// ══════════════════════════════════
+function updateHud() {
+  document.getElementById('hud-score').textContent = state.totalStars;
+  const h = '♥'.repeat(state.hearts) + '♡'.repeat(3-state.hearts);
+  document.getElementById('hud-hearts').textContent = h;
+}
+
+// ══════════════════════════════════
+//  FEEDBACK
+// ══════════════════════════════════
+const goodMessages = ['Great job! 🎉','Awesome! 🌟','You\'re a star! ⭐','Brilliant! 💖','Perfect! 🌸','Amazing! 🦄'];
+const badMessages  = ['Almost! Try again! 💪','Keep going! 🌷','You can do it! 🌈','Nice try! 💕'];
+
+function showFeedback(correct) {
+  const popup = document.getElementById('feedback-popup');
+  const emoji = document.getElementById('feedback-emoji');
+  const msg   = document.getElementById('feedback-msg');
+  if (correct) {
+    emoji.textContent = ['🎉','⭐','🌟','💖','🌸'][rand(0,4)];
+    msg.textContent   = goodMessages[rand(0,goodMessages.length-1)];
+    msg.className = 'feedback-msg good';
+  } else {
+    emoji.textContent = ['💪','🌷','🌈','💕'][rand(0,3)];
+    msg.textContent   = badMessages[rand(0,badMessages.length-1)];
+    msg.className = 'feedback-msg bad';
+  }
+  popup.classList.add('show');
+}
+function hideFeedback() { document.getElementById('feedback-popup').classList.remove('show'); }
+
+// ══════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════
+function showResults() {
+  const total = state.questions.length;
+  const pct = state.score / total;
+  let trophy='🏆', title='', msg='', stars='';
+
+  if (pct === 1) {
+    trophy='🏆'; title='PERFECT SCORE!'; msg='You got every single one! You\'re incredible!';
+    stars='⭐⭐⭐'; launchConfetti();
+    // unlock next level
+    unlockNext();
+  } else if (pct >= 0.75) {
+    trophy='🌟'; title='Amazing!'; msg='So close to perfect! Keep it up, superstar!';
+    stars='⭐⭐'; unlockNext();
+  } else if (pct >= 0.5) {
+    trophy='💪'; title='Good Try!'; msg='Great effort! Try again to unlock the next level!';
+    stars='⭐';
+  } else {
+    trophy='💕'; title='Keep Going!'; msg='Practice makes perfect! You\'ve got this, Lucy!';
+    stars='🌸';
+  }
+
+  document.getElementById('results-trophy').textContent = trophy;
+  document.getElementById('results-title').textContent  = title;
+  document.getElementById('results-stars').textContent  = stars;
+  document.getElementById('results-score').textContent  = `${state.score} / ${total}`;
+  document.getElementById('results-msg').textContent    = msg;
+  showScreen('screen-results');
+}
+
+function unlockNext() {
+  const nextId = state.currentLevel.id + 1;
+  if (!state.unlockedLevels.includes(nextId) && nextId <= LEVELS.length) {
+    state.unlockedLevels.push(nextId);
+    savePersist();
+  }
+}
+
+// ══════════════════════════════════
+//  PERSISTENCE
+// ══════════════════════════════════
+function savePersist() {
+  localStorage.setItem('lucyStars', state.totalStars);
+  localStorage.setItem('lucyUnlocked', JSON.stringify(state.unlockedLevels));
+}
+
+// ══════════════════════════════════
+//  CONFETTI
+// ══════════════════════════════════
+function launchConfetti() {
+  const colors = ['#FF3366','#FF6B9D','#FFD700','#FF69B4','#C0003C','#FFB3C6'];
+  for (let i=0;i<60;i++) {
+    const d = document.createElement('div');
+    d.className='confetti-piece';
+    d.style.cssText=`
+      left:${rand(5,95)}vw; top:-20px;
+      background:${colors[rand(0,colors.length-1)]};
+      width:${rand(7,13)}px; height:${rand(7,13)}px;
+      animation-duration:${rand(18,35)/10}s;
+      animation-delay:${rand(0,8)/10}s;
+      border-radius:${rand(0,1)?'50%':'2px'};
+    `;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 4000);
+  }
+}
+
+// ══════════════════════════════════
+//  BACKGROUND BUBBLES + STARS
+// ══════════════════════════════════
+(function initBg(){
+  const container = document.getElementById('bubbles');
+  const colors = ['#FF6B9D','#FF3366','#FFB3C6','#C84B9E','#FFD700'];
+  for(let i=0;i<14;i++){
+    const b=document.createElement('div');
+    b.className='bubble';
+    const size=rand(30,90);
+    b.style.cssText=`
+      width:${size}px; height:${size}px;
+      background:${colors[rand(0,colors.length-1)]};
+      left:${rand(0,95)}%;
+      animation-duration:${rand(12,25)}s;
+      animation-delay:${rand(0,15)}s;
+    `;
+    container.appendChild(b);
+  }
+  const starEmojis=['✨','⭐','💫','🌟'];
+  for(let i=0;i<18;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    s.textContent=starEmojis[rand(0,starEmojis.length-1)];
+    s.style.cssText=`
+      left:${rand(2,96)}vw; top:${rand(2,96)}vh;
+      animation-delay:${rand(0,30)/10}s;
+      animation-duration:${rand(25,45)/10}s;
+    `;
+    document.body.appendChild(s);
+  }
+})();
+</script>
+</body>
+</html>
