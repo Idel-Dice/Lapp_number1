@@ -468,17 +468,27 @@ const LEVELS = [
   },
 ];
 
+// Each entry has a verified preview (5 items shown), a guaranteed correct answer,
+// and 3 hand-picked distractors that are visually distinct from the answer.
 const SHAPE_PATTERNS = [
-  ["🔴","🔵","🔴","🔵","🔴","❓"],
-  ["⭐","❤️","⭐","❤️","⭐","❓"],
-  ["🌸","🌺","🌸","🌺","🌸","❓"],
-  ["🟥","🟦","🟩","🟥","🟦","❓"],
-  ["🐱","🐶","🐱","🐶","🐱","❓"],
-  ["🌙","⭐","🌙","⭐","🌙","❓"],
-  ["🍎","🍊","🍋","🍎","🍊","❓"],
-  ["🔺","🔶","🔷","🔺","🔶","❓"],
-  ["💜","💛","💜","💛","💜","❓"],
-  ["🐝","🦋","🐝","🦋","🐝","❓"],
+  // AB AB A → answer is B
+  { preview:["🔴","🔵","🔴","🔵","🔴"], answer:"🔵", distractors:["🟢","🟡","🔶"] },
+  { preview:["⭐","❤️","⭐","❤️","⭐"], answer:"❤️", distractors:["💛","💙","💚"] },
+  { preview:["🌸","🌺","🌸","🌺","🌸"], answer:"🌺", distractors:["🌻","🌼","🌷"] },
+  { preview:["🐱","🐶","🐱","🐶","🐱"], answer:"🐶", distractors:["🐰","🐸","🐼"] },
+  { preview:["🌙","⭐","🌙","⭐","🌙"], answer:"⭐",  distractors:["🌞","🌈","❄️"] },
+  { preview:["💜","💛","💜","💛","💜"], answer:"💛",  distractors:["💙","❤️","💚"] },
+  { preview:["🐝","🦋","🐝","🦋","🐝"], answer:"🦋",  distractors:["🐞","🐛","🪲"] },
+  { preview:["🍓","🍇","🍓","🍇","🍓"], answer:"🍇",  distractors:["🍎","🍊","🍋"] },
+  { preview:["🐺","🦄","🐺","🦄","🐺"], answer:"🦄",  distractors:["🐻","🦊","🐯"] },
+  { preview:["🟥","🟦","🟥","🟦","🟥"], answer:"🟦",  distractors:["🟩","🟧","🟨"] },
+  // ABC AB → answer is C
+  { preview:["🍎","🍊","🍋","🍎","🍊"], answer:"🍋",  distractors:["🍇","🍓","🍒"] },
+  { preview:["🔺","🔶","🔷","🔺","🔶"], answer:"🔷",  distractors:["🔸","🔹","🔻"] },
+  { preview:["🐶","🐱","🐭","🐶","🐱"], answer:"🐭",  distractors:["🐰","🐸","🐼"] },
+  { preview:["🌹","🌻","🌷","🌹","🌻"], answer:"🌷",  distractors:["🌸","🌺","🌼"] },
+  { preview:["🟥","🟦","🟩","🟥","🟦"], answer:"🟩",  distractors:["🟧","🟨","🟪"] },
+  { preview:["🐺","🦄","🌸","🐺","🦄"], answer:"🌸",  distractors:["⭐","🎀","🍭"] },
 ];
 
 const WORD_PROBLEMS = [
@@ -604,41 +614,40 @@ function generateMath(difficulty) {
 
 function generatePattern(difficulty) {
   if (difficulty === 1) {
-    // All SHAPE_PATTERNS are AB AB A — showing 5 items, the 6th is always B (index 1)
+    // Pick a random pattern. Each entry has a pre-verified answer and distractors,
+    // so the correct answer is ALWAYS present in the choices.
     const idx = rand(0, SHAPE_PATTERNS.length - 1);
     const pat = SHAPE_PATTERNS[idx];
-    const preview = [pat[0], pat[1], pat[2], pat[3], pat[4]];
-    const ans = pat[1]; // pattern AB AB A → next is B
 
-    // Build 3 distractors from OTHER patterns — must be different from ans
-    const distractors = [];
-    for (let i = 0; i < SHAPE_PATTERNS.length && distractors.length < 3; i++) {
-      if (i === idx) continue;
-      const c = SHAPE_PATTERNS[i][0];
-      if (c !== ans && !distractors.includes(c)) distractors.push(c);
-    }
-    // Fallback pool if needed
-    const fallbacks = ['🟣','🟤','🟡','🔵','🟠','⚫'];
+    // Safety check: make sure none of the 3 distractors accidentally equal the answer
+    // (they are hand-coded correctly, but this guard makes it bulletproof)
+    const safeDis = pat.distractors.filter(d => d !== pat.answer);
+    // Pad with guaranteed-different fallbacks if somehow we lost distractors
+    const fallbacks = ['🟣','🟤','🟡','🟠','⚫','🔘'];
     for (const fb of fallbacks) {
-      if (distractors.length >= 3) break;
-      if (fb !== ans && !distractors.includes(fb)) distractors.push(fb);
+      if (safeDis.length >= 3) break;
+      if (fb !== pat.answer && !safeDis.includes(fb)) safeDis.push(fb);
     }
+
+    // Build choices: always [correct answer] + [3 distractors], then shuffle
+    const choices = shuffle([pat.answer, safeDis[0], safeDis[1], safeDis[2]]);
 
     return {
       label: 'Shape Patterns', emoji: '🔷',
       text: 'What comes next?',
-      pattern: preview,
-      answer: ans,
-      choices: shuffle([ans, distractors[0], distractors[1], distractors[2]]),
+      pattern: pat.preview,
+      answer: pat.answer,
+      choices: choices,
       type: 'pattern'
     };
   } else {
-    // Skip-counting: show 5 numbers, ask for the 6th
+    // Skip-counting: show 5 numbers, ask for the 6th.
+    // makeChoices() guarantees the correct answer is always in the list.
     const skips = [2, 3, 5, 10];
     const skip = skips[rand(0, difficulty === 2 ? 2 : 3)];
     const start = rand(0, 20);
     const seq = [start, start+skip, start+2*skip, start+3*skip, start+4*skip];
-    const ans = start + 5 * skip;    // guaranteed correct
+    const ans = start + 5 * skip;
     return {
       label: 'Number Patterns', emoji: '🔢',
       text: 'What number comes next?',
