@@ -338,7 +338,7 @@
 
   <!-- ══════════ HOME SCREEN ══════════ -->
   <div class="screen active" id="screen-home">
-    <div class="lucy-avatar">🦄</div>
+    <div class="lucy-avatar" id="home-avatar">🦄</div>
     <div class="welcome-text">Hi, Lucy! 👋</div>
     <div class="welcome-sub">Ready for a math adventure? Let's go!</div>
     <div class="card" style="text-align:center;">
@@ -351,6 +351,7 @@
         <span class="badge">🧮 1st Grade Math</span>
         <span class="badge">🔢 2nd Grade Math</span>
         <span class="badge">🔷 Patterns</span>
+        <span class="badge">🐺 Wolf Power!</span>
       </div>
     </div>
     <div style="font-size:0.8rem;color:#ccc;margin-top:10px;">Made with 💖 just for Lucy</div>
@@ -448,19 +449,19 @@ const LEVELS = [
     unlocked: false,
   },
   {
-    id: 6, name: "Times Tables", emoji: "⭐",
+    id: 6, name: "Times Tables", emoji: "🐺",
     grade: "2nd Grade", desc: "Multiply by 2s & 5s",
     type: "math", difficulty: 4, questionsPerRound: 8,
     unlocked: false,
   },
   {
-    id: 7, name: "Word Problems", emoji: "📖",
+    id: 7, name: "Word Problems", emoji: "🐺",
     grade: "2nd Grade", desc: "Story math problems",
     type: "word", difficulty: 4, questionsPerRound: 6,
     unlocked: false,
   },
   {
-    id: 8, name: "Super Challenge", emoji: "🏆",
+    id: 8, name: "Super Challenge", emoji: "🐺",
     grade: "Boss Level!", desc: "Mix of everything!",
     type: "mixed", difficulty: 5, questionsPerRound: 10,
     unlocked: false,
@@ -514,108 +515,137 @@ function shuffle(arr) {
   return a;
 }
 
-function uniqueChoices(answer, min, max, count=4) {
-  const set = new Set([answer]);
+// FIXED: Guarantees correct answer is always in choices.
+// Builds 3 unique wrong answers spread around the correct answer, then shuffles all 4.
+function makeChoices(answer, spread) {
+  const wrongs = new Set();
   let tries = 0;
-  while (set.size < count && tries < 100) {
-    let v = rand(min, max);
-    if (v !== answer) set.add(v);
+  while (wrongs.size < 3 && tries < 300) {
     tries++;
+    const offset = rand(1, Math.max(spread, 3));
+    const sign = rand(0, 1) ? 1 : -1;
+    const candidate = answer + sign * offset;
+    if (candidate !== answer && candidate >= 0) wrongs.add(candidate);
   }
-  return shuffle([...set]);
+  // Hard fallback: fill with sequential values above answer
+  for (let fill = 1; wrongs.size < 3; fill++) {
+    if (answer + fill !== answer) wrongs.add(answer + fill);
+  }
+  return shuffle([answer, ...Array.from(wrongs).slice(0, 3)]);
 }
 
 function generateMath(difficulty) {
-  const emojis = ['🌸','🍎','⭐','🦋','🌈','🎀','🍭','🌺'];
-  const emoji = emojis[rand(0, emojis.length-1)];
+  const emojis = ['🌸','🍎','⭐','🦋','🌈','🎀','🍭','🌺','🐺','🦄'];
+  const emoji = emojis[rand(0, emojis.length - 1)];
 
   if (difficulty === 1) {
-    // add/subtract within 10
-    const a = rand(1,9), b = rand(1,9-a);
-    const ops = ['+','-'];
-    const op = ops[rand(0,1)];
-    const aa = op==='-' ? a+b : a;
-    const bb = op==='-' ? b : b;
-    const ans = op==='+' ? aa+bb : aa-bb;
-    return { label:'Add & Count', emoji, text:`${aa} ${op} ${bb} = ?`, answer:ans, choices:uniqueChoices(ans,0,10), type:'math' };
+    // Add or subtract — always within 0-10, always non-negative result
+    const useAdd = rand(0, 1) === 0;
+    let a, b, ans;
+    if (useAdd) {
+      a = rand(1, 8);
+      b = rand(1, 10 - a);
+      ans = a + b;               // guaranteed: 2..10
+    } else {
+      a = rand(2, 10);
+      b = rand(1, a - 1);
+      ans = a - b;               // guaranteed: 1..9
+    }
+    const op = useAdd ? '+' : '-';
+    return { label:'Add & Count', emoji, text:`${a} ${op} ${b} = ?`, answer:ans, choices:makeChoices(ans, 3), type:'math' };
   }
+
   if (difficulty === 2) {
-    const a = rand(2,18), b = rand(1,Math.min(a,18));
-    const op = rand(0,1)?'+':'-';
-    const ans = op==='+' ? a+b : a-b;
-    const max = op==='+' ? Math.min(a+b+8,25) : a;
-    return { label:'Add & Subtract', emoji, text:`${op==='+'?a:a+b} ${op} ${op==='+'?b:b} = ?`, answer:ans, choices:uniqueChoices(ans, Math.max(0,ans-5), ans+5), type:'math' };
+    // Add or subtract within 20
+    const useAdd = rand(0, 1) === 0;
+    let a, b, ans;
+    if (useAdd) {
+      a = rand(2, 15);
+      b = rand(1, 20 - a);
+      ans = a + b;               // guaranteed: 3..20
+    } else {
+      a = rand(4, 20);
+      b = rand(1, a - 1);
+      ans = a - b;               // guaranteed: 1..19
+    }
+    const op = useAdd ? '+' : '-';
+    return { label:'Add & Subtract', emoji, text:`${a} ${op} ${b} = ?`, answer:ans, choices:makeChoices(ans, 4), type:'math' };
   }
+
   if (difficulty === 3) {
-    // tens & ones
-    const a = rand(10,90), b = rand(1,99-a);
-    const op = rand(0,1)?'+':'-';
-    const first = op==='-' ? a+b : a;
-    const second = op==='-' ? b : b;
-    const ans = op==='+' ? first+second : first-second;
-    return { label:'Big Numbers', emoji, text:`${first} ${op} ${second} = ?`, answer:ans, choices:uniqueChoices(ans, Math.max(0,ans-10), ans+10), type:'math' };
+    // Add or subtract within 100
+    const useAdd = rand(0, 1) === 0;
+    let a, b, ans;
+    if (useAdd) {
+      a = rand(10, 80);
+      b = rand(5, 100 - a);
+      ans = a + b;               // guaranteed: 15..100
+    } else {
+      a = rand(20, 99);
+      b = rand(5, a - 5);
+      ans = a - b;               // guaranteed: 5..94
+    }
+    const op = useAdd ? '+' : '-';
+    return { label:'Big Numbers', emoji, text:`${a} ${op} ${b} = ?`, answer:ans, choices:makeChoices(ans, 10), type:'math' };
   }
+
   if (difficulty === 4) {
-    // times tables 2,5,10
-    const tables = [2,5,10];
-    const t = tables[rand(0,2)];
-    const n = rand(1,10);
-    const ans = t*n;
-    return { label:`Times Tables`, emoji, text:`${t} × ${n} = ?`, answer:ans, choices:uniqueChoices(ans, Math.max(0,ans-10), ans+10), type:'math' };
+    // Times tables: 2s, 5s, 10s
+    const tables = [2, 5, 10];
+    const t = tables[rand(0, 2)];
+    const n = rand(1, 10);
+    const ans = t * n;           // guaranteed correct
+    return { label:'Times Tables', emoji, text:`${t} × ${n} = ?`, answer:ans, choices:makeChoices(ans, t * 2), type:'math' };
   }
-  // difficulty 5 mixed
-  const sub = rand(1,4);
-  return generateMath(sub);
+
+  // difficulty 5 — mixed bag
+  return generateMath(rand(1, 4));
 }
 
 function generatePattern(difficulty) {
   if (difficulty === 1) {
-    // emoji shape pattern
-    const idx = rand(0, SHAPE_PATTERNS.length-1);
+    // All SHAPE_PATTERNS are AB AB A — showing 5 items, the 6th is always B (index 1)
+    const idx = rand(0, SHAPE_PATTERNS.length - 1);
     const pat = SHAPE_PATTERNS[idx];
-    const answer = pat[1]; // the alternating answer
-    // Determine answer: it's the element at index 5 (after the ❓)
-    // Pattern: A B A B A → answer = A (index 0)
-    // Some patterns are 3-cycles
-    let ans;
-    if (pat.length === 6) {
-      // cycle: look at position 5 in the original (pre-❓) sequence
-      const full = [pat[0],pat[1],pat[2],pat[3],pat[4]];
-      ans = full[5 % (full.length < 3 ? 2 : 2)]; // AB repeating
-      // Simple: answer matches pat[4] or pat[3]?
-      ans = full[0]; // always index 0 for AB AB A?
-    }
-    // Re-derive: for AB AB A❓, answer is B
-    const preview = pat.slice(0,5);
-    ans = pat[1]; // B
+    const preview = [pat[0], pat[1], pat[2], pat[3], pat[4]];
+    const ans = pat[1]; // pattern AB AB A → next is B
 
-    const distractors = SHAPE_PATTERNS
-      .filter((_,i)=>i!==idx)
-      .map(p=>p[0])
-      .filter(e=>e!==ans);
-    const choices = shuffle([ans, ...distractors.slice(0,3)]);
+    // Build 3 distractors from OTHER patterns — must be different from ans
+    const distractors = [];
+    for (let i = 0; i < SHAPE_PATTERNS.length && distractors.length < 3; i++) {
+      if (i === idx) continue;
+      const c = SHAPE_PATTERNS[i][0];
+      if (c !== ans && !distractors.includes(c)) distractors.push(c);
+    }
+    // Fallback pool if needed
+    const fallbacks = ['🟣','🟤','🟡','🔵','🟠','⚫'];
+    for (const fb of fallbacks) {
+      if (distractors.length >= 3) break;
+      if (fb !== ans && !distractors.includes(fb)) distractors.push(fb);
+    }
+
     return {
-      label:'Shape Patterns', emoji:'🔷',
-      text:'What comes next?',
+      label: 'Shape Patterns', emoji: '🔷',
+      text: 'What comes next?',
       pattern: preview,
       answer: ans,
-      choices: choices,
-      type:'pattern'
+      choices: shuffle([ans, distractors[0], distractors[1], distractors[2]]),
+      type: 'pattern'
     };
   } else {
-    // number skip-counting pattern
-    const skips = [2,3,5,10];
-    const skip = skips[rand(0, difficulty===2 ? 2 : 3)];
-    const start = rand(0,20);
+    // Skip-counting: show 5 numbers, ask for the 6th
+    const skips = [2, 3, 5, 10];
+    const skip = skips[rand(0, difficulty === 2 ? 2 : 3)];
+    const start = rand(0, 20);
     const seq = [start, start+skip, start+2*skip, start+3*skip, start+4*skip];
-    const ans = start+5*skip;
+    const ans = start + 5 * skip;    // guaranteed correct
     return {
-      label:'Number Patterns', emoji:'🔢',
-      text:'What number comes next?',
+      label: 'Number Patterns', emoji: '🔢',
+      text: 'What number comes next?',
       pattern: seq.map(String),
       answer: ans,
-      choices: uniqueChoices(ans, Math.max(0,ans-skip*2), ans+skip*2),
-      type:'pattern-num'
+      choices: makeChoices(ans, skip * 2),
+      type: 'pattern-num'
     };
   }
 }
@@ -794,15 +824,15 @@ function updateHud() {
 // ══════════════════════════════════
 //  FEEDBACK
 // ══════════════════════════════════
-const goodMessages = ['Great job! 🎉','Awesome! 🌟','You\'re a star! ⭐','Brilliant! 💖','Perfect! 🌸','Amazing! 🦄'];
-const badMessages  = ['Almost! Try again! 💪','Keep going! 🌷','You can do it! 🌈','Nice try! 💕'];
+const goodMessages = ['Great job! 🎉','Awesome! 🌟','You\'re a star! ⭐','Brilliant! 💖','Perfect! 🌸','Amazing! 🦄','Wolf power! 🐺','Howling good! 🐺','You\'re fierce! 🐺'];
+const badMessages  = ['Almost! Try again! 💪','Keep going! 🌷','You can do it! 🌈','Nice try! 💕','Wolf up and try again! 🐺'];
 
 function showFeedback(correct) {
   const popup = document.getElementById('feedback-popup');
   const emoji = document.getElementById('feedback-emoji');
   const msg   = document.getElementById('feedback-msg');
   if (correct) {
-    emoji.textContent = ['🎉','⭐','🌟','💖','🌸'][rand(0,4)];
+    emoji.textContent = ['🎉','⭐','🌟','💖','🌸','🐺','🦄'][rand(0,6)];
     msg.textContent   = goodMessages[rand(0,goodMessages.length-1)];
     msg.className = 'feedback-msg good';
   } else {
@@ -823,15 +853,14 @@ function showResults() {
   let trophy='🏆', title='', msg='', stars='';
 
   if (pct === 1) {
-    trophy='🏆'; title='PERFECT SCORE!'; msg='You got every single one! You\'re incredible!';
+    trophy='🐺'; title='WOLF CHAMPION!'; msg='You got every single one! You\'re a fierce wolf star!';
     stars='⭐⭐⭐'; launchConfetti();
-    // unlock next level
     unlockNext();
   } else if (pct >= 0.75) {
-    trophy='🌟'; title='Amazing!'; msg='So close to perfect! Keep it up, superstar!';
+    trophy='🦄'; title='Amazing!'; msg='So close to perfect! Keep it up, superstar!';
     stars='⭐⭐'; unlockNext();
   } else if (pct >= 0.5) {
-    trophy='💪'; title='Good Try!'; msg='Great effort! Try again to unlock the next level!';
+    trophy='🐺'; title='Good Try!'; msg='Great effort! Try again to unlock the next level!';
     stars='⭐';
   } else {
     trophy='💕'; title='Keep Going!'; msg='Practice makes perfect! You\'ve got this, Lucy!';
@@ -883,9 +912,16 @@ function launchConfetti() {
   }
 }
 
-// ══════════════════════════════════
-//  BACKGROUND BUBBLES + STARS
-// ══════════════════════════════════
+// Alternate wolf 🐺 and unicorn 🦄 on the home avatar every 2.5s
+(function avatarCycle(){
+  const avatars = ['🦄','🐺','🦄','🐺','🌸'];
+  let i = 0;
+  setInterval(() => {
+    i = (i + 1) % avatars.length;
+    const el = document.getElementById('home-avatar');
+    if (el) el.textContent = avatars[i];
+  }, 2500);
+})();
 (function initBg(){
   const container = document.getElementById('bubbles');
   const colors = ['#FF6B9D','#FF3366','#FFB3C6','#C84B9E','#FFD700'];
