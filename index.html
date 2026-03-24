@@ -348,9 +348,11 @@
       </button>
       <div class="divider"></div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:4px;">
-        <span class="badge">🧮 1st Grade Math</span>
-        <span class="badge">🔢 2nd Grade Math</span>
-        <span class="badge">🔷 Patterns</span>
+        <span class="badge">🧮 1st Grade</span>
+        <span class="badge">🔢 2nd Grade</span>
+        <span class="badge">✖️ Multiply</span>
+        <span class="badge">➗ Divide</span>
+        <span class="badge">🔮 Patterns</span>
         <span class="badge">🐺 Wolf Power!</span>
       </div>
     </div>
@@ -365,8 +367,9 @@
 
       <div class="level-grid" id="level-list"></div>
 
-      <div style="margin-top:14px;text-align:center;">
+      <div style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-secondary" onclick="showScreen('screen-home')">← Back</button>
+        <button class="btn btn-secondary" onclick="resetProgress()" style="border-color:#ff9999;color:#c0003c;">🔄 Reset Progress</button>
       </div>
     </div>
   </div>
@@ -418,77 +421,77 @@
 // ══════════════════════════════════
 
 const LEVELS = [
-  {
-    id: 1, name: "Counting Fun", emoji: "🍎",
-    grade: "1st Grade", desc: "Count & add to 10",
-    type: "math", difficulty: 1, questionsPerRound: 8,
-    unlocked: true,
-  },
-  {
-    id: 2, name: "Add & Subtract", emoji: "🌷",
-    grade: "1st Grade", desc: "Add & subtract to 20",
-    type: "math", difficulty: 2, questionsPerRound: 8,
-    unlocked: false,
-  },
-  {
-    id: 3, name: "Shape Patterns", emoji: "🔷",
-    grade: "1st Grade", desc: "What comes next?",
-    type: "pattern", difficulty: 1, questionsPerRound: 8,
-    unlocked: false,
-  },
-  {
-    id: 4, name: "Number Patterns", emoji: "🔢",
-    grade: "2nd Grade", desc: "Skip counting sequences",
-    type: "pattern", difficulty: 2, questionsPerRound: 8,
-    unlocked: false,
-  },
-  {
-    id: 5, name: "Bigger Math", emoji: "🦋",
-    grade: "2nd Grade", desc: "Add & subtract to 100",
-    type: "math", difficulty: 3, questionsPerRound: 8,
-    unlocked: false,
-  },
-  {
-    id: 6, name: "Times Tables", emoji: "🐺",
-    grade: "2nd Grade", desc: "Multiply by 2s & 5s",
-    type: "math", difficulty: 4, questionsPerRound: 8,
-    unlocked: false,
-  },
-  {
-    id: 7, name: "Word Problems", emoji: "🐺",
-    grade: "2nd Grade", desc: "Story math problems",
-    type: "word", difficulty: 4, questionsPerRound: 6,
-    unlocked: false,
-  },
-  {
-    id: 8, name: "Super Challenge", emoji: "🐺",
-    grade: "Boss Level!", desc: "Mix of everything!",
-    type: "mixed", difficulty: 5, questionsPerRound: 10,
-    unlocked: false,
-  },
+  { id:1,  name:"Counting Fun",        emoji:"🍎", grade:"1st Grade",  desc:"Count & add to 10",             type:"math",     difficulty:1, questionsPerRound:8  },
+  { id:2,  name:"Add & Subtract",      emoji:"🌷", grade:"1st Grade",  desc:"Add & subtract to 20",          type:"math",     difficulty:2, questionsPerRound:8  },
+  { id:3,  name:"Shape Patterns",      emoji:"🔷", grade:"1st Grade",  desc:"What comes next?",              type:"pattern",  difficulty:1, questionsPerRound:8  },
+  { id:4,  name:"Number Patterns",     emoji:"🔢", grade:"2nd Grade",  desc:"Skip counting sequences",       type:"pattern",  difficulty:2, questionsPerRound:8  },
+  { id:5,  name:"Bigger Math",         emoji:"🦋", grade:"2nd Grade",  desc:"Add & subtract to 100",         type:"math",     difficulty:3, questionsPerRound:8  },
+  { id:6,  name:"Times Tables",        emoji:"🐺", grade:"2nd Grade",  desc:"Multiply by 2s, 5s & 10s",     type:"math",     difficulty:4, questionsPerRound:8  },
+  { id:7,  name:"Word Problems",       emoji:"🐺", grade:"2nd Grade",  desc:"Story math problems",           type:"word",     difficulty:4, questionsPerRound:6  },
+  { id:8,  name:"Super Challenge",     emoji:"🐺", grade:"Boss Level!", desc:"Mix of everything!",           type:"mixed",    difficulty:5, questionsPerRound:10 },
+  { id:9,  name:"Advanced Patterns",   emoji:"🔮", grade:"3rd Grade",  desc:"Complex sequences & rules",     type:"pattern",  difficulty:3, questionsPerRound:8  },
+  { id:10, name:"Multiplication",      emoji:"✖️", grade:"3rd Grade",  desc:"Multiply any tables 1–12",      type:"multiply", difficulty:1, questionsPerRound:10 },
+  { id:11, name:"Division",            emoji:"➗", grade:"3rd Grade",  desc:"Divide & find the quotient",    type:"divide",   difficulty:1, questionsPerRound:10 },
+  { id:12, name:"Mixed Operations",    emoji:"🌟", grade:"3rd Grade",  desc:"× and ÷ together",              type:"multdiv",  difficulty:2, questionsPerRound:10 },
+  { id:13, name:"Math Master",         emoji:"👑", grade:"Champion!",  desc:"All operations — ultimate boss",type:"master",   difficulty:6, questionsPerRound:12 },
 ];
 
-// Each entry has a verified preview (5 items shown), a guaranteed correct answer,
-// and 3 hand-picked distractors that are visually distinct from the answer.
+// Each entry: verified preview (5 shown), guaranteed correct answer, 3 hand-picked distractors.
+// difficulty:1 = AB/ABC emoji patterns (1st grade)
+// difficulty:2 = number skip-counting (2nd grade) — handled dynamically in generatePattern
+// difficulty:3 = complex 3rd-grade patterns (growing, rule-based, multi-step)
 const SHAPE_PATTERNS = [
-  // AB AB A → answer is B
-  { preview:["🔴","🔵","🔴","🔵","🔴"], answer:"🔵", distractors:["🟢","🟡","🔶"] },
-  { preview:["⭐","❤️","⭐","❤️","⭐"], answer:"❤️", distractors:["💛","💙","💚"] },
-  { preview:["🌸","🌺","🌸","🌺","🌸"], answer:"🌺", distractors:["🌻","🌼","🌷"] },
-  { preview:["🐱","🐶","🐱","🐶","🐱"], answer:"🐶", distractors:["🐰","🐸","🐼"] },
-  { preview:["🌙","⭐","🌙","⭐","🌙"], answer:"⭐",  distractors:["🌞","🌈","❄️"] },
-  { preview:["💜","💛","💜","💛","💜"], answer:"💛",  distractors:["💙","❤️","💚"] },
-  { preview:["🐝","🦋","🐝","🦋","🐝"], answer:"🦋",  distractors:["🐞","🐛","🪲"] },
-  { preview:["🍓","🍇","🍓","🍇","🍓"], answer:"🍇",  distractors:["🍎","🍊","🍋"] },
-  { preview:["🐺","🦄","🐺","🦄","🐺"], answer:"🦄",  distractors:["🐻","🦊","🐯"] },
-  { preview:["🟥","🟦","🟥","🟦","🟥"], answer:"🟦",  distractors:["🟩","🟧","🟨"] },
-  // ABC AB → answer is C
-  { preview:["🍎","🍊","🍋","🍎","🍊"], answer:"🍋",  distractors:["🍇","🍓","🍒"] },
-  { preview:["🔺","🔶","🔷","🔺","🔶"], answer:"🔷",  distractors:["🔸","🔹","🔻"] },
-  { preview:["🐶","🐱","🐭","🐶","🐱"], answer:"🐭",  distractors:["🐰","🐸","🐼"] },
-  { preview:["🌹","🌻","🌷","🌹","🌻"], answer:"🌷",  distractors:["🌸","🌺","🌼"] },
-  { preview:["🟥","🟦","🟩","🟥","🟦"], answer:"🟩",  distractors:["🟧","🟨","🟪"] },
-  { preview:["🐺","🦄","🌸","🐺","🦄"], answer:"🌸",  distractors:["⭐","🎀","🍭"] },
+  // ── difficulty 1: AB repeating ──
+  { preview:["🔴","🔵","🔴","🔵","🔴"], answer:"🔵", distractors:["🟢","🟡","🔶"],      difficulty:1 },
+  { preview:["⭐","❤️","⭐","❤️","⭐"], answer:"❤️", distractors:["💛","💙","💚"],       difficulty:1 },
+  { preview:["🌸","🌺","🌸","🌺","🌸"], answer:"🌺", distractors:["🌻","🌼","🌷"],       difficulty:1 },
+  { preview:["🐱","🐶","🐱","🐶","🐱"], answer:"🐶", distractors:["🐰","🐸","🐼"],       difficulty:1 },
+  { preview:["🌙","⭐","🌙","⭐","🌙"], answer:"⭐",  distractors:["🌞","🌈","❄️"],       difficulty:1 },
+  { preview:["💜","💛","💜","💛","💜"], answer:"💛",  distractors:["💙","❤️","💚"],       difficulty:1 },
+  { preview:["🐝","🦋","🐝","🦋","🐝"], answer:"🦋",  distractors:["🐞","🐛","🪲"],       difficulty:1 },
+  { preview:["🍓","🍇","🍓","🍇","🍓"], answer:"🍇",  distractors:["🍎","🍊","🍋"],       difficulty:1 },
+  { preview:["🐺","🦄","🐺","🦄","🐺"], answer:"🦄",  distractors:["🐻","🦊","🐯"],       difficulty:1 },
+  { preview:["🟥","🟦","🟥","🟦","🟥"], answer:"🟦",  distractors:["🟩","🟧","🟨"],       difficulty:1 },
+  // ── difficulty 1: ABC repeating ──
+  { preview:["🍎","🍊","🍋","🍎","🍊"], answer:"🍋",  distractors:["🍇","🍓","🍒"],       difficulty:1 },
+  { preview:["🔺","🔶","🔷","🔺","🔶"], answer:"🔷",  distractors:["🔸","🔹","🔻"],       difficulty:1 },
+  { preview:["🐶","🐱","🐭","🐶","🐱"], answer:"🐭",  distractors:["🐰","🐸","🐼"],       difficulty:1 },
+  { preview:["🌹","🌻","🌷","🌹","🌻"], answer:"🌷",  distractors:["🌸","🌺","🌼"],       difficulty:1 },
+  { preview:["🟥","🟦","🟩","🟥","🟦"], answer:"🟩",  distractors:["🟧","🟨","🟪"],       difficulty:1 },
+  { preview:["🐺","🦄","🌸","🐺","🦄"], answer:"🌸",  distractors:["⭐","🎀","🍭"],       difficulty:1 },
+];
+
+// ── 3rd-grade complex patterns (difficulty 3) — number sequences with rules ──
+// Each entry: seq = full sequence shown as text, answer = correct next value,
+// rule = shown as hint, distractors computed via makeChoices in generatePattern.
+const COMPLEX_PATTERNS = [
+  // Growing arithmetic sequences
+  { seq:[2,4,6,8,10],    answer:12, rule:"Count by 2s",          spread:4  },
+  { seq:[3,6,9,12,15],   answer:18, rule:"Count by 3s",          spread:6  },
+  { seq:[4,8,12,16,20],  answer:24, rule:"Count by 4s",          spread:8  },
+  { seq:[5,10,15,20,25], answer:30, rule:"Count by 5s",          spread:10 },
+  { seq:[7,14,21,28,35], answer:42, rule:"Count by 7s",          spread:7  },
+  { seq:[6,12,18,24,30], answer:36, rule:"Count by 6s",          spread:6  },
+  { seq:[8,16,24,32,40], answer:48, rule:"Count by 8s",          spread:8  },
+  { seq:[9,18,27,36,45], answer:54, rule:"Count by 9s",          spread:9  },
+  // Doubling & halving
+  { seq:[1,2,4,8,16],    answer:32, rule:"Each number doubles!",  spread:8  },
+  { seq:[2,4,8,16,32],   answer:64, rule:"Each number doubles!",  spread:16 },
+  { seq:[3,6,12,24,48],  answer:96, rule:"Each number doubles!",  spread:24 },
+  { seq:[96,48,24,12,6], answer:3,  rule:"Each number is halved", spread:3  },
+  { seq:[64,32,16,8,4],  answer:2,  rule:"Each number is halved", spread:2  },
+  // Growing differences (triangular-style)
+  { seq:[1,3,6,10,15],   answer:21, rule:"Add 2, then 3, then 4…",spread:6 },
+  { seq:[0,1,3,6,10],    answer:15, rule:"Gaps grow by 1 each time",spread:5},
+  { seq:[2,5,9,14,20],   answer:27, rule:"Gaps grow by 1 each time",spread:7},
+  // Fibonacci-style
+  { seq:[1,1,2,3,5],     answer:8,  rule:"Add the last two numbers",spread:4},
+  { seq:[1,2,3,5,8],     answer:13, rule:"Add the last two numbers",spread:5},
+  { seq:[2,3,5,8,13],    answer:21, rule:"Add the last two numbers",spread:8},
+  // Mixed step patterns
+  { seq:[10,20,15,25,20],answer:30, rule:"+10, -5 alternating",   spread:5  },
+  { seq:[1,4,9,16,25],   answer:36, rule:"Perfect squares!",      spread:10 },
+  { seq:[100,90,81,73,66],answer:60,rule:"Gaps shrink by 1 each time",spread:6},
 ];
 
 const WORD_PROBLEMS = [
@@ -614,37 +617,28 @@ function generateMath(difficulty) {
 
 function generatePattern(difficulty) {
   if (difficulty === 1) {
-    // Pick a random pattern. Each entry has a pre-verified answer and distractors,
-    // so the correct answer is ALWAYS present in the choices.
-    const idx = rand(0, SHAPE_PATTERNS.length - 1);
-    const pat = SHAPE_PATTERNS[idx];
-
-    // Safety check: make sure none of the 3 distractors accidentally equal the answer
-    // (they are hand-coded correctly, but this guard makes it bulletproof)
+    // emoji shape patterns — pick from SHAPE_PATTERNS filtered to difficulty:1
+    const pool = SHAPE_PATTERNS.filter(p => p.difficulty === 1);
+    const pat = pool[rand(0, pool.length - 1)];
     const safeDis = pat.distractors.filter(d => d !== pat.answer);
-    // Pad with guaranteed-different fallbacks if somehow we lost distractors
     const fallbacks = ['🟣','🟤','🟡','🟠','⚫','🔘'];
     for (const fb of fallbacks) {
       if (safeDis.length >= 3) break;
       if (fb !== pat.answer && !safeDis.includes(fb)) safeDis.push(fb);
     }
-
-    // Build choices: always [correct answer] + [3 distractors], then shuffle
-    const choices = shuffle([pat.answer, safeDis[0], safeDis[1], safeDis[2]]);
-
     return {
       label: 'Shape Patterns', emoji: '🔷',
       text: 'What comes next?',
       pattern: pat.preview,
       answer: pat.answer,
-      choices: choices,
+      choices: shuffle([pat.answer, safeDis[0], safeDis[1], safeDis[2]]),
       type: 'pattern'
     };
-  } else {
-    // Skip-counting: show 5 numbers, ask for the 6th.
-    // makeChoices() guarantees the correct answer is always in the list.
+
+  } else if (difficulty === 2) {
+    // Skip-counting number sequences
     const skips = [2, 3, 5, 10];
-    const skip = skips[rand(0, difficulty === 2 ? 2 : 3)];
+    const skip = skips[rand(0, 3)];
     const start = rand(0, 20);
     const seq = [start, start+skip, start+2*skip, start+3*skip, start+4*skip];
     const ans = start + 5 * skip;
@@ -656,6 +650,58 @@ function generatePattern(difficulty) {
       choices: makeChoices(ans, skip * 2),
       type: 'pattern-num'
     };
+
+  } else {
+    // difficulty 3 — 3rd-grade complex rule-based patterns
+    const cp = COMPLEX_PATTERNS[rand(0, COMPLEX_PATTERNS.length - 1)];
+    return {
+      label: '3rd Grade Patterns', emoji: '🔮',
+      text: `Rule hint: ${cp.rule}`,
+      pattern: cp.seq.map(String),
+      answer: cp.answer,
+      choices: makeChoices(cp.answer, cp.spread),
+      type: 'pattern-num'
+    };
+  }
+}
+
+function generateMultiply(difficulty) {
+  const emojis = ['✖️','🌸','🐺','⭐','🎀','💖'];
+  const emoji = emojis[rand(0, emojis.length - 1)];
+  // difficulty 1: full tables 1–12 × 1–12
+  // difficulty 2: larger factors, mixed with missing-factor problems
+  if (difficulty === 1) {
+    const a = rand(1, 12);
+    const b = rand(1, 12);
+    const ans = a * b;
+    return { label:'Multiplication', emoji, text:`${a} × ${b} = ?`, answer:ans, choices:makeChoices(ans, Math.max(a, b)), type:'multiply' };
+  } else {
+    // Missing factor: a × ? = product  OR  ? × b = product
+    const a = rand(2, 12);
+    const b = rand(2, 12);
+    const product = a * b;
+    const missingFirst = rand(0,1) === 0;
+    const text = missingFirst ? `? × ${b} = ${product}` : `${a} × ? = ${product}`;
+    const ans = missingFirst ? a : b;
+    return { label:'Missing Factor', emoji, text, answer:ans, choices:makeChoices(ans, 4), type:'multiply' };
+  }
+}
+
+function generateDivide(difficulty) {
+  const emojis = ['➗','🌸','🐺','⭐','🍭','🌺'];
+  const emoji = emojis[rand(0, emojis.length - 1)];
+  // Always construct as a × b = product then ask product ÷ a = ?
+  // Guarantees whole-number, non-zero, non-trivial answers.
+  const a = rand(2, 12);
+  const b = rand(1, 12);
+  const product = a * b;
+  if (difficulty === 1) {
+    const ans = b;                              // product ÷ a = b
+    return { label:'Division', emoji, text:`${product} ÷ ${a} = ?`, answer:ans, choices:makeChoices(ans, Math.max(3, a)), type:'divide' };
+  } else {
+    // Missing divisor: product ÷ ? = b
+    const ans = a;
+    return { label:'Missing Divisor', emoji, text:`${product} ÷ ? = ${b}`, answer:ans, choices:makeChoices(ans, 4), type:'divide' };
   }
 }
 
@@ -664,19 +710,51 @@ function generateWord() {
   return { label:'Word Problem', emoji:'📖', text:p.q, answer:p.a, choices:shuffle(p.choices), type:'word' };
 }
 
+// Every call generates a FRESH random question set — full replayability on every play.
 function buildQuestions(level) {
   const qs = [];
   const n = level.questionsPerRound;
-  for (let i=0; i<n; i++) {
-    if (level.type === 'math')    qs.push(generateMath(level.difficulty));
-    else if (level.type === 'pattern') qs.push(generatePattern(level.difficulty));
-    else if (level.type === 'word')    qs.push(generateWord());
-    else {
-      // mixed
-      const t = rand(0,2);
-      if (t===0) qs.push(generateMath(rand(1,4)));
-      else if (t===1) qs.push(generatePattern(rand(1,2)));
-      else qs.push(generateWord());
+  for (let i = 0; i < n; i++) {
+    switch (level.type) {
+      case 'math':
+        qs.push(generateMath(level.difficulty));
+        break;
+      case 'pattern':
+        qs.push(generatePattern(level.difficulty));
+        break;
+      case 'word':
+        qs.push(generateWord());
+        break;
+      case 'multiply':
+        qs.push(generateMultiply(level.difficulty));
+        break;
+      case 'divide':
+        qs.push(generateDivide(level.difficulty));
+        break;
+      case 'multdiv':
+        // Alternates × and ÷, mixing difficulty 1 and 2
+        qs.push(rand(0,1) === 0
+          ? generateMultiply(rand(1,2))
+          : generateDivide(rand(1,2)));
+        break;
+      case 'mixed':
+        // Original Super Challenge: math + patterns + word problems
+        { const t = rand(0,2);
+          if (t===0) qs.push(generateMath(rand(1,4)));
+          else if (t===1) qs.push(generatePattern(rand(1,2)));
+          else qs.push(generateWord()); }
+        break;
+      case 'master':
+        // All operations — math, patterns, multiply, divide, word
+        { const t = rand(0,4);
+          if (t===0) qs.push(generateMath(rand(1,5)));
+          else if (t===1) qs.push(generatePattern(rand(1,3)));
+          else if (t===2) qs.push(generateMultiply(rand(1,2)));
+          else if (t===3) qs.push(generateDivide(rand(1,2)));
+          else qs.push(generateWord()); }
+        break;
+      default:
+        qs.push(generateMath(level.difficulty));
     }
   }
   return qs;
@@ -694,12 +772,30 @@ function showScreen(id) {
 }
 
 // ══════════════════════════════════
-//  LEVEL LIST
+//  LEVEL LIST  (with grade-section headers)
 // ══════════════════════════════════
 function buildLevelList() {
   const el = document.getElementById('level-list');
   el.innerHTML = '';
+
+  // Section headers keyed by the first level id in that group
+  const SECTION_HEADERS = {
+    1:  '🎀 1st Grade',
+    3:  '🔢 2nd Grade',
+    8:  '🐺 Boss Level',
+    9:  '🔮 3rd Grade',
+    13: '👑 Champion',
+  };
+
   LEVELS.forEach(lv => {
+    // Insert a section header if this level starts a new group
+    if (SECTION_HEADERS[lv.id]) {
+      const hdr = document.createElement('div');
+      hdr.className = 'level-section-title';
+      hdr.textContent = SECTION_HEADERS[lv.id];
+      el.appendChild(hdr);
+    }
+
     const unlocked = state.unlockedLevels.includes(lv.id);
     const btn = document.createElement('button');
     btn.className = 'btn btn-level' + (unlocked ? '' : ' locked');
@@ -892,12 +988,36 @@ function unlockNext() {
   }
 }
 
+// Unlock a specific level by id (used for testing / parent override)
+function unlockLevel(id) {
+  if (!state.unlockedLevels.includes(id) && id >= 1 && id <= LEVELS.length) {
+    state.unlockedLevels.push(id);
+    savePersist();
+    buildLevelList();
+  }
+}
+
 // ══════════════════════════════════
-//  PERSISTENCE
+//  PERSISTENCE & RESET
 // ══════════════════════════════════
 function savePersist() {
   localStorage.setItem('lucyStars', state.totalStars);
   localStorage.setItem('lucyUnlocked', JSON.stringify(state.unlockedLevels));
+}
+
+// Resets all progress: clears stars and re-locks all levels except Level 1.
+// Also wipes localStorage so the next page load starts fresh.
+function resetProgress() {
+  const confirmed = confirm('Reset all progress? Stars will be cleared and all levels will re-lock (except Level 1). This cannot be undone!');
+  if (!confirmed) return;
+  state.totalStars = 0;
+  state.unlockedLevels = [1];
+  state.currentLevel = null;
+  localStorage.removeItem('lucyStars');
+  localStorage.removeItem('lucyUnlocked');
+  buildLevelList();           // refresh the level list UI immediately
+  updateHud();
+  alert('Progress reset! Level 1 is ready to play. Good luck, Lucy! 🌸');
 }
 
 // ══════════════════════════════════
